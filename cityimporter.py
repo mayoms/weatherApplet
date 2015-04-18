@@ -33,7 +33,7 @@ class ReadCityData():
             else:
                 self.serialized_data[line[2]] = (self.parse_country_state(line),) + self.serialized_data[line[2]]
 
-        return self.serialized_datag
+        return self.serialized_data
 
 def main():
     fh = open('admin1CodesASCII.txt', 'r')
@@ -50,7 +50,7 @@ def main():
         opened_data = city_data.open()
 
         for key in opened_data:
-            print(key, opened_data[key])
+            print key, opened_data[key]
 
 if __name__ == '__main__':
     main()

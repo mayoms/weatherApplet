@@ -5,7 +5,7 @@ import json
 import xml.etree.ElementTree as ET
 import csv
 from datetime import datetime
-from pymongo import MongoClient
+# from pymongo import MongoClient
 
 MONGO_URL = 'mongodb://codeguild2:pleese-keep-secret@dharma.mongohq.com:10023/qscfadm'
 
@@ -16,7 +16,7 @@ class PickleFileSerializer(object):
 
     def save(self, object_container):
         with open('saved_list.pl', 'wb') as fh:
-            pickle.dump(object_container, fh)
+            pickle.dump(object_container, fh, protocol=2)
 
     def open(self):
         with open('saved_list.pl', 'rb') as fh:
@@ -85,27 +85,27 @@ class CSVFileSerializer(object):
                 object_writer.writerow(vars(todo_dict))
 
 
-class CloudStorageSerializer(object):
-
-    def __init__(self):
-        self._collectionName = 'micah_todolist'
-        self.type = 'cloud'
-
-    def _connect(self):
-        self._mongo_client = MongoClient(MONGO_URL)
-        self._mongo_db = self._mongo_client.qscfadm
-
-    def save(self, todolist):
-        self._connect()
-
-        self._mongo_db[self._collectionName].remove({})
-
-        self._mongo_db[self._collectionName].insert_many([vars(itm) for itm in todolist])
-
-    def open(self):
-
-        self._connect()
-        return list(self._mongo_db[self._collectionName].find({}))
+# class CloudStorageSerializer(object):
+#
+#     def __init__(self):
+#         self._collectionName = 'micah_todolist'
+#         self.type = 'cloud'
+#
+#     def _connect(self):
+#         self._mongo_client = MongoClient(MONGO_URL)
+#         self._mongo_db = self._mongo_client.qscfadm
+#
+#     def save(self, todolist):
+#         self._connect()
+#
+#         self._mongo_db[self._collectionName].remove({})
+#
+#         self._mongo_db[self._collectionName].insert_many([vars(itm) for itm in todolist])
+#
+#     def open(self):
+#
+#         self._connect()
+#         return list(self._mongo_db[self._collectionName].find({}))
 
 
 
