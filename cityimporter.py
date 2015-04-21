@@ -1,6 +1,7 @@
 from serialize import PickleFileSerializer
 
 
+
 class ReadCityData():
     def __init__(self, location_data, region_codes):
 
