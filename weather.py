@@ -3,7 +3,6 @@ __author__ = 'micah'
 from serialize import PickleFileSerializer
 from collections import namedtuple
 import forecastio
-import pprint
 
 APIKEY = '9ee79b186c41009279bf49c90f8bd8e4'
 
@@ -56,7 +55,7 @@ class CityObject(object):
         self.lng = lng
 
     @property
-    def CurrentConditions(self):
+    def current_conditions(self):
 
         forecast = forecastio.load_forecast(APIKEY, self.lat, self.lng)
         currently = forecast.currently()
@@ -73,50 +72,17 @@ class CityObject(object):
                 }
 
     @property
-    def Forecast(self):
+    def weekly_forecast(self):
         forecast_data = []
         forecast = forecastio.load_forecast(APIKEY,self.lat, self.lng)
         daily = forecast.daily()
         for daily_data_point in daily.data[1:]:
             forecast_data.append(WeatherObject( daily_data_point.time, daily_data_point.summary,
                                                 daily_data_point.icon, daily_data_point.sunriseTime,
-                                                daily_data_point.sunsetTime, daily_data_point.temperatureMin,
-                                                daily_data_point.temperatureMax))
+                                                daily_data_point.sunsetTime,daily_data_point.temperatureMax,
+                                                daily_data_point.temperatureMin))
         return forecast_data
 
 
-search_criteria = [w.strip() for w in raw_input('Please enter city, region, country: ').split(',')]
-city_location_dict = PickleFileSerializer().open()
-city_search = CityDataSearch(city_location_dict)
-
-
-results = city_search.search(search_criteria)
-
-if results and len(results[1]) > 1:
-    print 'Did you mean: '
-    for itr, x in enumerate(results):
-        print itr, x
-    choice = int(raw_input('>'))
-    chosen_city = CityObject(results[0],*results[1][choice])
-elif len(results[1]) == 1:
-    chosen_city = CityObject(results[0], *results[1][0])
-
-
-
-
-pprint.pprint(chosen_city.CurrentConditions)
-
-print "Forecast for " + chosen_city.city_name, chosen_city.region, chosen_city.country
-for item in chosen_city.Forecast:
-    print ', '.join(['{0}={1}'.format(k, getattr(item, k)) for k in item._fields])
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    main()

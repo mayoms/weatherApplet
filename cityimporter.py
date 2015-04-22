@@ -14,11 +14,9 @@ class ReadCityData():
         # Reads file from Geonames (cities5000.txt) containing location data, parses for RegionID (In this case state)
         # Country Code, Latitude and Longitude
         if city_geodata[8] == 'us':
-            return city_geodata[10], city_geodata[8], city_geodata[4], city_geodata[5]
-
+            return city_geodata[8], city_geodata[10], city_geodata[4], city_geodata[5]
         # If not in the united states, first get region name from admin1CodesASCII.txt, using region ID number
-        # included in original file outside of the US, CA, GB, etc.. Also the result is reversed as a search of
-        # Paris, FR is presumably more likely than Paris, Ile-de-france.
+        # included in original file outside of the US, CA, GB, etc..
         try:
             region = self.region_codes[city_geodata[8] + '.' + city_geodata[10]]
         except KeyError:
