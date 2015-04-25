@@ -28,26 +28,24 @@ class WeatherApp(object):
         print 'Welcome to the Weather App. What would you like to do?'
         while True:
             command = raw_input(self.command_prompt).strip().lower()
-            if command:
-                if command == 'help':
-                    self.help()
-                elif command =='current':
-                    self.current()
-                elif command == 'search':
-                    self.populate_city_object()
-                elif command == 'forecast':
-                    self.forecast()
-                elif command == 'weekend':
-                    self.forecast('weekend=True')
-                elif command == 'quit':
-                    break
-                else:
-                    print command + ' not recognized.'
+            if command == 'help':
+                self.help()
+            elif command =='current':
+                self.current()
+            elif command == 'search':
+                self.populate_city_object()
+            elif command == 'forecast':
+                self.forecast()
+            elif command == 'weekend':
+                self.forecast('weekend=True')
+            elif command == 'quit':
+                break
+            else:
+                print 'Command not found, try "help"'
                 continue
-            print 'Command not found, try "help"'
 
     def help(self):
-        print 'Commands: search, current, forecast, weekend.'
+        print 'Commands: help, search, current, forecast, weekend, quit.'
 
     def populate_city_object(self):
         search_criteria = raw_input('Please enter city, region, country: ')
@@ -55,22 +53,19 @@ class WeatherApp(object):
             search_criteria = [w.strip() for w in search_criteria.split(',')]
             results = self.city_data.search(search_criteria)
             if results:
-                if len(results[1]) > 1:
-                    print 'Did you mean: '
-                    for itr, x in enumerate(results[1]):
-                        print str(itr+1) + ".", results[0] + ", " + x[0] + ", " + x[1]
-                    try:
-                        choice = int(raw_input('>')) -1
-                    except ValueError, IndexError:
-                        print "Please choose a numeric value from the list."
-                        choice = int(raw_input('>'))
-                    else:
-                        self.city_object = weather.CityObject(results[0],*results[1][choice])
-                elif len(results[1]) is 1:
-                    self.city_object = weather.CityObject(results[0], *results[1][0])
-                if self.city_object.city_name is 'us':
-                    self.command_prompt = self.city_object.city_name + ',' + self.city_object.region + ' >'
-                self.command_prompt = self.city_object.city_name + ',' + self.city_object.country + ' >'
+                if isinstance(results[0],tuple):
+                    while True:
+                        for itr, x in enumerate(results):
+                            print str(itr+1), " ".join([i.capitalize() for i in x[:3]])
+                        try:
+                            choice = int(raw_input('Please select a city: ')) -1
+                            results = results[choice]
+                            break
+                        except ValueError, IndexError:
+                            print "Please choose a numeric value from the list."
+                            continue
+                self.city_object = weather.CityObject(weather.CityAttrs(*results))
+                self.command_prompt = self.city_object.city_attrs.name + ',' + self.city_object.city_attrs.region + ' >'
                 return
         print "No results found for '" + ' '.join(search_criteria) + "'."
 
@@ -78,9 +73,12 @@ class WeatherApp(object):
     def current(self):
 
         if self.city_object:
-            current_conditions = PrettyTable([self.city_object.city_name,self.city_object.region + ', ' + self.city_object.country])
+            if not self.city_object.todays_weather:
+                self.city_object.current_conditions()
+            current_conditions = PrettyTable([self.city_object.city_attrs.name,
+                                              self.city_object.city_attrs.region + ', ' + self.city_object.city_attrs.country])
             current_conditions.align = 'l'
-            for key, value in self.city_object.current_conditions.iteritems():
+            for key, value in self.city_object.todays_weather.iteritems():
                 if key is not 'icon':
                     current_conditions.add_row([key, value])
             print current_conditions
@@ -90,17 +88,19 @@ class WeatherApp(object):
 
     def forecast(self, weekend=None):
         if self.city_object:
-            forecast_data = self.city_object.weekly_forecast
+            if not self.city_object.weekly_weather:
+                self.city_object.weekly_forecast()
             if weekend:
                 if datetime.datetime.now().weekday() in [5,6]:
-                    forecast_data = forecast_data[4:]
-                forecast_data = filter(lambda x: x.time.weekday() in [4,5,6], forecast_data)
-
+                    gen = (day for day in self.city_object.weekly_weather[4:] if day.time.weekday() in [4,5,6])
+                else:
+                    gen = (day for day in self.city_object.weekly_weather if day.time.weekday() in [4,5,6])
+            else:
+                gen = (day for day in self.city_object.weekly_weather)
             seven_day_forecast = PrettyTable()
             seven_day_forecast.align = 'l'
-            seven_day_forecast.left_padding_width = 1
             seven_day_forecast.add_column('',['Summary','Sunrise','Sunset','High','Low'])
-            for object in forecast_data:
+            for object in gen:
                 seven_day_forecast.add_column(days_dict[object.time.weekday()], [object.summary,
                                 object.sunrise.time().strftime('%I:%M %p'), object.sunset.time().strftime('%I:%M %p'),
                                 object.high_temp, object.low_temp])

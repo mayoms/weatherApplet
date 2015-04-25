@@ -6,6 +6,7 @@ import forecastio
 
 APIKEY = '9ee79b186c41009279bf49c90f8bd8e4'
 
+CityAttrs = namedtuple('City', ['name', 'country', 'region', 'lat', 'lng'])
 WeatherObject = namedtuple('WeatherObject', ['time','summary','icon','sunrise','sunset','high_temp','low_temp'])
 
 class CityDataSearch(object):
@@ -19,11 +20,11 @@ class CityDataSearch(object):
             match = self.ag_city_data[search_criteria[0]]
             # If more than one city is found, and the user gave additional data we try to determine the correct city.
             if len(match) > 1 and len(search_criteria) > 1:
-                deeper_search = self.determine_which_city(search_criteria, match)
+                deeper_search = self.determine_which_city(search_criteria[1:], match)
                 if deeper_search:
-                    return search_criteria[0], tuple(deeper_search)
+                    return deeper_search if len(deeper_search) > 1 else deeper_search[0]
         # If a match is found or only one token given, return the Match or possible matches respectively.
-            return search_criteria[0], match
+            return match
 
         except KeyError:
             # If no match is found, return None.
@@ -36,7 +37,7 @@ class CityDataSearch(object):
         # Loop through and check for matches, depending on token count.
 
         for city_tup in matches:
-            if set(search_tokens[1:]) == set(city_tup[:2]):
+            if set(search_tokens) == set(city_tup[1:3]):
                 return city_tup
             if set(search_tokens) & set(city_tup):
                 possible_matches.append(city_tup)
@@ -46,21 +47,19 @@ class CityDataSearch(object):
 
 class CityObject(object):
 
-    def __init__(self, city_name, country, region, lat, lng):
+    def __init__(self, city_attrs):
 
-        self.city_name = city_name
-        self.region = region
-        self.country = country
-        self.lat = lat
-        self.lng = lng
+        self.city_attrs = city_attrs
+        self.todays_weather = None
+        self.weekly_weather = []
 
-    @property
     def current_conditions(self):
 
-        forecast = forecastio.load_forecast(APIKEY, self.lat, self.lng)
+        forecast = forecastio.load_forecast(APIKEY, self.city_attrs.lat, self.city_attrs.lng)
         currently = forecast.currently()
 
-        return {
+        self.todays_weather= \
+            {
                 "summary":currently.summary,
                 "icon":currently.icon,
                 "temperature": currently.temperature,
@@ -71,17 +70,16 @@ class CityObject(object):
                 "time": currently.time
                 }
 
-    @property
     def weekly_forecast(self):
         forecast_data = []
-        forecast = forecastio.load_forecast(APIKEY,self.lat, self.lng)
+        forecast = forecastio.load_forecast(APIKEY,self.city_attrs.lat, self.city_attrs.lng)
         daily = forecast.daily()
         for daily_data_point in daily.data[1:]:
-            forecast_data.append(WeatherObject( daily_data_point.time, daily_data_point.summary,
+            self.weekly_weather.append(WeatherObject( daily_data_point.time, daily_data_point.summary,
                                                 daily_data_point.icon, daily_data_point.sunriseTime,
                                                 daily_data_point.sunsetTime,daily_data_point.temperatureMax,
                                                 daily_data_point.temperatureMin))
-        return forecast_data
+
 
 
 if __name__ == '__main__':
