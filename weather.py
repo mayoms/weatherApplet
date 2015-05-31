@@ -4,7 +4,7 @@ from serialize import PickleFileSerializer
 from collections import namedtuple
 import forecastio
 
-APIKEY = '9ee79b186c41009279bf49c90f8bd8e4'
+APIKEY = 'apikey'
 
 CityAttrs = namedtuple('City', ['name', 'country', 'region', 'lat', 'lng'])
 WeatherObject = namedtuple('WeatherObject', ['time','summary','icon','sunrise','sunset','high_temp','low_temp'])
